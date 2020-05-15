@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Optional, List
-
+from itertools import product
 
 def check(x, y):
     return 0 <= x < 8 and 0 <= y < 8
@@ -143,10 +143,8 @@ class BoardState:
 
     def move_king(self, x, y, current_board, figure, used, can):
         result = []
-        result += self.try_go_king(x, y, current_board, figure, used.copy(), -1, -1, can)
-        result += self.try_go_king(x, y, current_board, figure, used.copy(), 1, -1, can)
-        result += self.try_go_king(x, y, current_board, figure, used.copy(), -1, 1, can)
-        result += self.try_go_king(x, y, current_board, figure, used.copy(), 1, 1, can)
+        for i, j in product((-1, 1), (-1, 1)):
+            result += self.try_go_king(x, y, current_board, figure, used.copy(), i, j, can)
         return result
         
     def try_go_checker(self, x, y, current_board, figure, used, dest_x, dest_y, can):
@@ -206,10 +204,8 @@ class BoardState:
     
     def move_checker(self, x, y, current_board, figure, used, can):
         result = []
-        result += self.try_go_checker(x, y, current_board, figure, used.copy(), -1, -1, can)
-        result += self.try_go_checker(x, y, current_board, figure, used.copy(), 1, -1, can)
-        result += self.try_go_checker(x, y, current_board, figure, used.copy(), -1, 1, can)
-        result += self.try_go_checker(x, y, current_board, figure, used.copy(), 1, 1, can)
+        for i, j in product((-1, 1), (-1, 1)):
+            result += self.try_go_checker(x, y, current_board, figure, used.copy(), i, j, can)
         return result        
     
     def move(self, x, y, can):
@@ -227,15 +223,11 @@ class BoardState:
                 figure = self.board[x, y]
                 if figure * self.current_player > 0:
                     if abs(figure) == 1:
-                        can = min(can, self.check_can_checker(x, y, -1, -1))
-                        can = min(can, self.check_can_checker(x, y, -1, 1))
-                        can = min(can, self.check_can_checker(x, y, 1, -1))
-                        can = min(can, self.check_can_checker(x, y, 1, 1)) 
+                        for i, j in product((-1, 1), (-1, 1)):
+                            can = min(can, self.check_can_checker(x, y, i, j))
                     else:
-                        can = min(can, self.check_can_king(x, y, -1, -1))
-                        can = min(can, self.check_can_king(x, y, -1, 1))
-                        can = min(can, self.check_can_king(x, y, 1, -1))
-                        can = min(can, self.check_can_king(x, y, 1, 1)) 
+                        for i, j in product((-1, 1), (-1, 1)):
+                            can = min(can, self.check_can_king(x, y, i, j))
         return can
 
     def get_possible_moves(self) -> List['BoardState']:

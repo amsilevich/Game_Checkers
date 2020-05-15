@@ -79,6 +79,7 @@ def save_in_file(board, s):
             buffer.write(str(board.board[x, y]) + '\n')
     buffer.close()
 
+
 def load_from_file(board, s):
     buffer = open(s, 'r')
     buffer_to_str = buffer.read()
@@ -87,6 +88,49 @@ def load_from_file(board, s):
         board.board[ind // 8, ind % 8] = data[ind]
     buffer.close()
 
+
+def upd_arr(first, second):
+    for i in range(0, 8):
+        for j in range(0, 8):
+            first[i, j] = second[i, j]
+
+
+def lose_case(screen, grid_size, board):
+    draw_board(screen, 0, 0, grid_size, board)
+    pygame.display.flip()
+    time.sleep(0.5)
+    write_pygame("You lose!", (128, 0, 0))
+
+
+def win_case():
+    time.sleep(0.5)
+    write_pygame("You won!", (255, 255, 0))
+
+
+def try_move(screen, board, moves,  used, old_y, old_x, new_y, new_x, grid_size):
+    new_board, n_used = board.do_move(used, old_y, old_x, new_y, new_x)
+    upd_arr(used, n_used)
+    if new_board is None:
+        return 1
+    upd_arr(board.board, new_board.board)
+    changed_board = board.copy()
+    update(changed_board, used)
+    if not find(changed_board, moves):
+        return 1
+    update(board, used)
+    draw_board(screen, 0, 0, grid_size, board)
+    pygame.display.flip()
+    upd_arr(used, np.zeros((8, 8)))
+    board.current_player *= -1
+    if ai.next_move(board) is None:
+        win_case()
+        return 0
+    upd_arr(board.board, ai.next_move(board).board)
+    board.current_player *= -1
+    if len(board.get_possible_moves()) == 0:
+        lose_case(screen, grid_size, board)
+        return 0
+    return 2
 
 
 def game_loop(screen: Surface, board: BoardState, ai: AI):
@@ -105,48 +149,13 @@ def game_loop(screen: Surface, board: BoardState, ai: AI):
             if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 new_x, new_y = [p // grid_size for p in event.pos]
                 old_x, old_y = [p // grid_size for p in mouse_click_position]
-                new_board, used = board.do_move(used, old_y, old_x, new_y, new_x)
-                if not(new_board is None):
-                    board = new_board
-                    changed_board = board.copy()
-                    update(changed_board, used)
-                    print()
-                    print("-------moves-------------")
+                try_res = try_move(screen, board, moves, used, old_y, old_x, new_y, new_x, grid_size)
+                if try_res == 2:
+                    moves = board.get_possible_moves()
                     write(moves)
-                    print("-------used--------------")
-                    print(used)
-                    print("------change-board-------")
-                    print(changed_board.board)
-                    print("--------------------------")
-                    print()
-                    if find(changed_board, moves):
-                        update(board, used)
-                        draw_board(screen, 0, 0, grid_size, board)
-                        pygame.display.flip()
-                        used = np.zeros((8, 8))
-                        board.current_player *= -1
-                        board = ai.next_move(board)
-                        if board is None:
-                            time.sleep(0.5)
-                            write_pygame("You won!", (255, 255, 0))
-                            print('you won')
-                            return
-                        board.current_player *= -1  
-                        print("------matrix---after---ai-----")
-                        print(board.board)
-                        print("------matrix-after-ai----------")
-                        moves = board.get_possible_moves()
-                        write(moves)
-                        if len(moves) == 0:
-                            draw_board(screen, 0, 0, grid_size, board)
-                            pygame.display.flip()
-                            time.sleep(0.5)
-                            write_pygame("You lose!", (128, 0, 0))
-                            print('you lose')
-                            return        
-                else:
-                    print("BADMOVE")
-                    
+                elif not try_res:
+                    return
+
             if event.type == pygame.MOUSEBUTTONUP and event.button == 3:
                 if not god_mode:
                     continue
@@ -155,7 +164,7 @@ def game_loop(screen: Surface, board: BoardState, ai: AI):
                 board.current_player = 1
                 board.board[y, x] = int((board.board[y, x] + 1 + 2) % 5 - 2)  # change figure
                 moves = board.get_possible_moves()
-                
+
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     board = board.inverted()
@@ -178,6 +187,7 @@ def game_loop(screen: Surface, board: BoardState, ai: AI):
             draw_board(screen, 0, 0, grid_size, board)
             pygame.display.flip()
     save_in_file(board.initial_state(), "buffer.txt")
+
 
 pygame.init()
 
