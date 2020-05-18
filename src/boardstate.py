@@ -56,29 +56,20 @@ class BoardState:
                     new_used[center_x, center_y] = 1
         else:
             count_opposite_color = 0
-            cur_x, cur_y = from_x, from_y
-            while cur_x != to_x and cur_y != to_y:
-                if cur_x > to_x:
-                    cur_x -= 1
-                else: 
-                    cur_x += 1
-                    
-                if cur_y > to_y:
-                    cur_y -= 1
-                else: 
-                    cur_y += 1
-                    
-                if cur_x == to_x and cur_y == to_y: break
-                
+            is_up = (1 if (to_x > from_x) else -1)
+            is_right = (1 if (to_y > from_y) else -1)
+            for i in range(1, abs(from_x - to_x)):
+                cur_x = from_x + is_up * i
+                cur_y = from_y + is_right * i
                 if self.board[cur_x, cur_y] * figure > 0:
-                    return None, used
+                   return None, used
 
                 if self.board[cur_x, cur_y] * figure < 0:
-                    if used[cur_x, cur_y]:
-                        return None, used
-                    new_used[cur_x, cur_y] = 1
-                    count_opposite_color += 1   
-              
+                   if used[cur_x, cur_y]:
+                       return None, used
+                   new_used[cur_x, cur_y] = 1
+                   count_opposite_color += 1
+
             if count_opposite_color > 1:
                 return None, used
             
